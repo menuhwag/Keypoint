@@ -1,0 +1,89 @@
+<html>
+    <head>
+        <script>
+            let items;
+            let index = 0;
+            let item;
+
+            download().then(obj => {
+                items = obj;
+                item = items[index];
+                describtion(item);
+            });
+
+            function down_index(){
+                if (index > 0){
+                    index += -1
+                    console.log('index = '+index);
+                    item = items[index];
+                    describtion(item);
+                }
+            }
+
+            function up_index(){
+                if (index < items.length - 1){
+                    index += 1
+                    console.log('index = '+index);
+                    item = items[index];
+                    describtion(item);
+                }
+            }
+
+            async function download(){
+                let obj;
+                await fetch('<%=api_url%>/api/items').then(res => res.json())
+                .then(json => {
+                    const data = JSON.stringify(json);
+                    obj = JSON.parse(data);
+                })
+
+                return obj;
+            }
+            async function describtion(item){
+                let describtion = 
+                `<li>기출년도 : ${item.describtion.previous}</li>
+                <li>대분류 : ${item.category.main}</li>
+                <li>중분류 : ${item.category.middle}</li>
+                <li>소분류 : ${item.category.sub}</li>
+                <li>난이도 : ${item.category.difficulty}</li>
+                <li>문제</li>
+                <img src="<%=api_url%>/images/questions/${item.describtion.question}">
+                <li>풀이</li>
+                <img src="<%=api_url%>/images/answers/${item.describtion.answer}">
+                <li>키포인트</li>
+                <img src="<%=api_url%>/images/keypoints/${item.describtion.keypoint}">`;
+                document.getElementById('describtion').innerHTML = describtion;
+            }
+
+            async function deleteItem(item){
+                if (confirm("정말 삭제하시겠습니까?") == true){    //확인
+                    const elementID = ['question', 'answer', 'keypoint'];
+                    for (let i = 0; i < elementID.length; i++){
+                        await fetch('<%=api_url%>/api/images/' + elementID[i]+'/'+item.describtion[elementID[i]], {
+                            method: 'DELETE',
+                        })
+                        .catch(err => console.log(err));
+                    }
+                    await fetch('<%=api_url%>/api/items/' + item._id, {
+                        method: 'DELETE',
+                    })
+                    .catch(err => console.log(err));
+                    location.reload();
+                }else{   //취소
+                    return false;
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <a href="/"><h1>Keypoint</h1></a>
+        <hr>
+        <h3>Main page</h3>
+        <div>
+            <input type="button" value="-" onclick="down_index()">
+            <input type="button" value="+" onclick="up_index()">
+            <input type="button" value="삭제" onclick="deleteItem(item)">
+            <div id="describtion"></div>
+        </div>
+    </body>
+</html>

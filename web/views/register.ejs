@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <script>
+            async function uploadItem(){
+                const previous = document.getElementById('previous').value;
+                const main = document.getElementById('main_category').value.replace(/; /g, ';').split(';');
+                const middle = document.getElementById('middle_category').value.replace(/; /g, ';').split(';');
+                const sub = document.getElementById('sub_category').value.replace(/; /g, ';').split(';');
+                const diffopt = document.getElementById('difficulty')
+                const difficulty = diffopt.options[diffopt.selectedIndex].value;
+
+                const category = {main, middle, sub, difficulty};
+
+                const { question, answer, keypoint } = await uploadFile();
+
+                const describtion = {previous, question, answer, keypoint};
+
+                const data = { category, describtion };
+                
+                fetch('<%=api_url%>/api/items', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(json => {
+                    if (json.msg === "success"){
+                        alert('등록 완료');
+                    }else{
+                        alert('등록 실패');
+                    }
+                })
+                .catch(err => console.log(err));
+            }
+            
+            async function uploadFile(){
+                let names = new Object();
+                const elementID = ['question', 'answer', 'keypoint'];
+                for (let i = 0; i < elementID.length; i++){
+                    var formData = new FormData();
+                    var fileField = document.getElementById('file_' + elementID[i]);
+
+                    formData.append('img_' + elementID[i], fileField.files[0]);
+
+                    await fetch('<%=api_url%>/api/images/' + elementID[i], {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(json => {
+                        names[elementID[i]] = json.file.filename;
+                    })
+                    .catch(err => console.log(err));
+                }
+                return names;
+            }
+        </script>
+    </head>
+    <body>
+        <a href="/"><h1>Keypoint</h1></a>
+        <hr>
+        <h3>Register page</h3>
+        <div>
+            <li><label for="previous">기출년도 : </label><input type="text" name="previous"  id="previous" placeholder="YY-n ex) 16-2"></li>
+            <li><label for="main_category">대분류 : : </label><input type="text" name="main_category"  id="main_category" placeholder="세미콜론(;)로 구분하여 여러개 등록 가능"></li>
+            <li><label for="middle_category">중분류 : </label><input type="text" name="middle_category"  id="middle_category" placeholder="세미콜론(;)로 구분하여 여러개 등록 가능"></li>
+            <li><label for="sub_category">소분류 : </label><input type="text" name="sub_category"  id="sub_category" placeholder="세미콜론(;)로 구분하여 여러개 등록 가능"></li>
+            <li><label for="difficulty">난이도 : </label>
+                <select name="difficulty" id="difficulty">
+                    <option value="하" selected>하</option>
+                    <option value="중">중</option>
+                    <option value="상">상</option>
+                </select>
+            </li>
+            <li><label for="file_question">문제 : </label><input type="file" name="file_question" id="file_question"></li>
+            <li><label for="file_answer">풀이 : </label><input type="file" name="file_answer" id="file_answer"></li>
+            <li><label for="file_keypoint">키포인트 : </label><input type="file" name="file_keypoint" id="file_keypoint"></li>
+            <input type="submit" value="ok" onclick="uploadItem()">
+        </div>
+    </body>
+</html>
